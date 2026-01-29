@@ -4,12 +4,16 @@ import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
 import org.testng.Assert;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
 public class Basics {
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException {
 
         /*
         3 main parts of REST Assured
@@ -35,7 +39,28 @@ public class Basics {
                 .log().all()
                 .queryParam("key", "qaclick123")
                 .header("Content-Type", "application/json")
-                .body(Payload.AddPlace())
+                /*
+                read the JSON payload from external file and pass it as body
+                 1. Files.readAllBytes(Paths.get("path of the file")) - reads all bytes from the file
+                 2. new String() - converts the byte array to String
+                 3. Paths.get("path of the file") - gets the path of the file
+                 4. "src/main/resources/AddPlace.json" - path of the JSON file
+                 5. This way we can keep the payloads separate from the code
+                 6. This improves code readability and maintainability
+                 7. Also, we can easily update the payloads without changing the code
+                 8. This is especially useful for large payloads
+                 9. It also allows for reusability of payloads across different tests
+                 10. It helps in version control of payloads
+                 11. Overall, it is a good practice to keep payloads in external files
+                 12. It also helps in collaboration among team members
+                 13. It makes it easier to manage different environments (dev, test, prod)
+                 14. It allows for better organization of test data
+                 15. It can also help in parameterizing tests
+                 16. It can be used to store different variations of payloads for testing
+                 17. It can also help in separating test data from test logic
+                 18. It can also help in reducing code duplication
+                 */
+                .body(new String(Files.readAllBytes(Paths.get("src/main/resources/AddPlace.json"))))
         .when()
                 .post("/maps/api/place/add/json")
         .then()
