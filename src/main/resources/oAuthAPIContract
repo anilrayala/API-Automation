@@ -1,0 +1,23 @@
+API Contract download
+******************************************************************
+
+Authorization Server EndPoint:
+
+https://rahulshettyacademy.com/oauthapi/oauth2/resourceOwner/token
+HTTP Method : POST
+
+Form parameters :
+
+client_id: 692183103107-p0m7ent2hk7suguv4vq22hjcfhcr43pj.apps.googleusercontent.com
+client_secret:  erZOWM9g3UtwNRj340YYaK_W
+
+grant_type:   client_credentials
+scope:  trust
+
+******************************************************************
+GetCourseDetails EndPoint (Secured by OAuth) :
+
+https://rahulshettyacademy.com/oauthapi/getCourseDetails
+
+HTTP Method : GET
+Query Parameter : access_token
