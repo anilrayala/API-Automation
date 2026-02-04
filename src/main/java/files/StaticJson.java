@@ -2,7 +2,7 @@ package files;
 
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
-import org.testng.annotations.Test;
+//import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,7 +13,7 @@ import static io.restassured.RestAssured.given;
 
 public class StaticJson {
 
-    @Test
+    //@Test
     public void addBook() throws IOException {
         RestAssured.baseURI = "http://216.10.245.166";
        String response = given().header("Content-Type", "application/json")
@@ -25,7 +25,7 @@ public class StaticJson {
         System.out.println(id);
     }
 
-    @Test
+    //@Test
     public void deleteBook() throws IOException {
         RestAssured.baseURI = "http://216.10.245.166";
         String response = given().header("Content-Type", "application/json")

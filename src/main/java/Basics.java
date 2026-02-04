@@ -2,7 +2,7 @@ import files.Payload;
 import files.ReusableMethods;
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
-import org.testng.Assert;
+//import org.testng.Assert;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -122,7 +122,7 @@ public class Basics {
         /*
         Validate if the updated address is correct
          */
-        Assert.assertEquals(actualAddress, "70 Summer walk, USA");
+        //Assert.assertEquals(actualAddress, "70 Summer walk, USA");
 
     }
 

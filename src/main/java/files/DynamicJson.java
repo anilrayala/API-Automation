@@ -2,8 +2,8 @@ package files;
 
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+//import org.testng.annotations.DataProvider;
+//import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
 
@@ -17,7 +17,7 @@ public class DynamicJson {
     the method constructs the request body using the Payload.AddBook method, sends a POST request to add the book,
     and extracts the book ID from the response
      */
-    @Test(dataProvider = "BooksData")
+    //@Test(dataProvider = "BooksData")
     public void addBook(String isbn, String aisle){
 
         RestAssured.baseURI = "http://216.10.245.166";
@@ -43,7 +43,7 @@ public class DynamicJson {
     it returns a 2D Object array where each sub-array represents a set of parameters for the test method
     and is annotated with @DataProvider to be recognized by TestNG
      */
-    @DataProvider(name="BooksData")
+  //  @DataProvider(name="BooksData")
     public Object[][] getData(){
         // Array = Collection of elements
         // Object Array = Collection of different type of elements
@@ -57,7 +57,7 @@ public class DynamicJson {
     the method constructs the request body using the Payload.DeleteBook method, sends a POST request to delete the book,
     and prints the response message
      */
-    @Test(dataProvider = "deleteBookData")
+   // @Test(dataProvider = "deleteBookData")
     public void deleteBook(String bookID) {
 
         RestAssured.baseURI = "http://216.10.245.166";
@@ -77,7 +77,7 @@ public class DynamicJson {
         System.out.println("Response message: " + msg);
     }
 
-    @DataProvider(name="deleteBookData")
+   // @DataProvider(name="deleteBookData")
     public Object[][] deleteBookData() {
         return new Object[][] {{"abc112345"},{"abc254321"},{"abc367890"}};
     }
