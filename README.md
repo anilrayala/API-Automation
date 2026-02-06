@@ -262,3 +262,73 @@ Selected tag filters scenarios.
 -   Auto Complete:  Ctrl-Space (or just start typing)
 
 ## End of README
+
+Introduction to Rest Api's and where it is used in project architecture
+real time usage of api's in industry and examples
+understanding of GET, POST, PUT, DELETE HTTP CRUD operations of api's
+what are path, query parameters and headers in rest api
+Postman tool for testing api's and how to use it
+how to create a collection in postman and organize api's
+setting up maven project for api testing with dependencies
+validate status codes
+Assetions on json response body and headers through automation code
+parsing json response using JsonPath and validating values
+integrating multiple api with each other and validating the flow with common json response data
+building end to end automation using POST, GET, PUT, DELETE api's together
+importance of junit and testng in api automation and how to use them
+understanding structure of complex nested json response and its array notations how to validate it
+retrieving the json array size and its elements using jsonpath and validating it
+iterating over every element of json array and validating it
+retrieving jsnon nodes on condition logic using jsonpath and validating it
+real time example to solve business logic through json response
+
+### Handling dynamic json payloads with parameterization and data driven testing using testng data provider
+- why dynamic json payloads are important to understand
+- sending parameters to payload from test
+- understanding testng data provider for parameterization
+- example of parametarization of api tests with multiple data sets
+- how to handle static json payloads
+
+basic authentication and token based authentication in api's
+how to send files as attachment in post api calls
+handling oAuth2.0 authentication in api's and how to generate access tokens for client credentials and authorization code grant types
+
+serialization and deserialization of json response to pojo classes
+- what is serialization and deserialization in api testing
+- how to create pojo classes for json response
+- using libraries like jackson or gson for serialization and deserialization
+- example of deserializing json response to pojo and validating values
+- example of serializing pojo to json payload and sending it in api request
+- advantages of using pojo classes for api testing and how it improves code readability and maintainability
+- handling nested json response with pojo classes and validating complex data structures
+- best practices for creating pojo classes and maintaining them in api automation projects
+- real time example of using serialization and deserialization in api testing to solve business logic and validate end to end flows
+- common challenges faced during serialization and deserialization and how to overcome them in api automation projects
+
+Request and response specifications in Rest Assured for reusable api test code
+- what are request and response specifications in Rest Assured
+- how to create request specifications for common request configurations like base URI, headers, authentication, etc
+- how to create response specifications for common response validations like status code, content type, etc
+- example of using request and response specifications in api tests to reduce code duplication and improve maintainability
+- best practices for organizing request and response specifications in api automation projects
+
+cucumber and jenkins integration for api test automation
+
+GraphQL api testing and how it differs from REST api testing
+- what is GraphQL and how it differs from REST
+- how to send GraphQL queries and mutations in api tests
+- validating GraphQL responses and handling errors in GraphQL api testing
+- example of testing a GraphQL api with Rest Assured and validating the response data
+- best practices for testing GraphQL apis and how to handle complex queries and mutations in api automation projects
+- query variables
+
+git basics
+
+using excel for testData and reading the values into tests using HashMap and converting to json
+
+core java basics
+
+
+
+
+
