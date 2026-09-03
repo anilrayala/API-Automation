@@ -1,5 +1,17 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
+
+### Test run output ###
+# Request/response traffic and framework logs now go to target/logs/ and are covered by
+# target/ above. This entry catches the old root-level logging.txt, which was committed.
+logging.txt
+
+### Local secrets ###
+# Never commit real credentials. Environment-specific overrides belong in a local file
+# or environment variables -- see src/test/resources/config/qa.properties.
+*.local.properties
+src/test/resources/config/local.properties
+.env
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin

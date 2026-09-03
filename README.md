@@ -1,334 +1,233 @@
-# Sample Feature - Keywords Summary
+# API Automation Framework
 
-## Summary
-Brief descriptions of common Gherkin keywords used in `*.feature` files.
-
-- **Author**: anil@gmail.com
-- **Feature**: List of scenarios.
-- **Scenario**: Business rule through list of steps with arguments.
-- **Given**: Precondition to be met before executing the main steps.
-- **When**: Action or event that triggers the scenario.
-- **Then**: Expected outcome or result after the action.
-- **And**: Additional steps that can be used with Given, When, Then.
-- **But**: Steps that indicate exceptions or contrasts to the previous steps.
-- **Scenario Outline**: Template for scenarios that can be run multiple times with different data.
-- **Examples**: Data table for Scenario Outline to provide different sets of inputs.
-- **Background**: Steps that are common to all scenarios in the feature file and run before each scenario.
-- **Doc String**: Use triple double-quotes (`"""`) to define multi-line strings or text blocks.
-- **Data Table**: Use pipe-delimited rows (`|`) to define tabular data for steps.
-- **Tag**: Use `@tag` to categorize or label scenarios for filtering or grouping.
-- **Angle Brackets**: Use `<placeholder>` to denote placeholders in Scenario Outline steps.
-- **Quotes**: Use `"` or `'` to define string literals in steps.
-- **Comment**: Use `#`, `--`, or `##` to add comments within the feature file.
+REST Assured + TestNG + Cucumber. Covers REST and GraphQL, token and OAuth 2.0 auth,
+POJO serialization, data-driven testing from code and spreadsheets, BDD, and Jenkins
+reporting.
 
 ---
 
-## Maven Commands to Run Tests
+## Quick start
 
 ```bash
-mvn test -Dcucumber.filter.tags=@AddPlace
-mvn test
-mvn clean test
-mvn test verify
-mvn test verify -Dcucumber.filter.tags=@AddPlace
+mvn clean test                                                    # default suite
+mvn clean test -DsuiteXmlFile=src/test/resources/suites/offline.xml  # no network needed
+mvn clean test -DsuiteXmlFile=src/test/resources/suites/smoke.xml
+mvn clean verify                                                  # + Cucumber HTML report
+```
+
+**Requires JDK 21 or newer.** `JAVA_HOME` currently points at `C:\Program Files\Java\jdk-23`,
+which is no longer installed — set it to your JDK 25 install or Maven will not start:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-25"
 ```
 
 ---
 
-## Cucumber Options
+## Layout
 
-- cucumber.filter.tags
-- cucumber.features
-- cucumber.glue
+```
+src/main/java/org/api/automation/     ← the framework (reusable, no test logic)
+  config/       ConfigManager, ConfigKeys      environment + secrets resolution
+  constants/    ApiEndpoint, HttpMethod        every URL and verb, in one place
+  core/         SpecFactory, RestClient        how a request is built and fired
+  models/       request/ + response/           POJOs for serialization
+  services/     PlaceService, EcomService…     one class per API, one method per operation
+  data/         TestDataFactory, ExcelDataReader, GraphQLQueries
+  utils/        JsonUtils, ResourceReader
+  exceptions/   FrameworkException
+
+src/test/java/org/api/automation/      ← the tests
+  base/         BaseTest
+  listeners/    TestListener, RetryAnalyzer, RetryListener
+  tests/        json/ serialization/ place/ library/ auth/ ecom/ graphql/
+  bdd/          context/ stepdefinitions/ runner/
+
+src/test/resources/
+  config/qa.properties      per-environment settings (NO secrets)
+  suites/*.xml              testng.xml, offline.xml, smoke.xml, auth.xml
+  features/                 Cucumber feature files
+  testdata/                 TestData.xlsx, laptop.jpg, sample JSON
+  log4j2.xml
+```
+
+The flow is always the same:
+
+```
+Test  →  Service  →  RestClient  →  SpecFactory  →  HTTP
+ ↑ asserts    ↑ one method     ↑ logs +      ↑ base URI, auth,
+              per operation      dispatches    content type, filters
+```
+
+A test never builds a URL, sets a header, or knows an endpoint path.
 
 ---
 
-## Cucumber Reports
+## Configuration and secrets
 
-- Cucumber generates reports inside the **target** folder.
-- HTML and JSON reports can be found at:
+Everything configurable lives in `src/test/resources/config/qa.properties`. Values resolve
+in this order, first match wins:
 
-```text
-target/cucumber-reports/
+1. `-Dplaces.baseUrl=...` on the Maven command line
+2. environment variable `PLACES_BASEURL` (key upper-cased, `.` → `_`)
+3. the properties file
+
+**No secret is in this repository.** The auth tests need these set as environment variables:
+
+```powershell
+$env:OAUTH_CLIENTID     = "...apps.googleusercontent.com"
+$env:OAUTH_CLIENTSECRET = "..."
+$env:ECOM_USEREMAIL     = "you@example.com"
+$env:ECOM_USERPASSWORD  = "..."
 ```
 
-Example:
+Then `mvn test -DsuiteXmlFile=src/test/resources/suites/auth.xml`.
 
-```text
-target/cucumber-reports/cucumber.json
-```
+A missing value fails immediately naming the key, rather than sending an empty credential
+and reporting a confusing 401.
+
+> ⚠️ **Rotate the old Google client secret.** It was hardcoded in
+> `src/main/java/files/OAuthTest.java` and `DeserializedOAuthTest.java`. Removing it from
+> the working tree does not remove it from git history — anyone with the repo can still
+> read it. Revoke it in the Google Cloud console and issue a new one.
+
+Add a new environment by dropping `staging.properties` next to `qa.properties` and running
+`-Denv=staging`. No Java changes.
 
 ---
 
-## Jenkins Setup
+## Test groups
 
-### Start Jenkins
+| Group | Meaning |
+|---|---|
+| `offline` | No network. JsonPath, serialization, Excel, URL parsing. |
+| `smoke` | Fast main-path check per API. |
+| `regression` | Full functional coverage. |
+| `e2e` | Multi-call flows with chained state. |
+| `datadriven` | DataProvider- or spreadsheet-driven. |
+| `auth`, `graphql`, `negative` | By subject. |
+| `external-api` | Depends on the Library practice host, which is often down. |
+| `requires-credentials` | Needs a real secret. Excluded from the default suite. |
+| `needs-verification` | Asserts behaviour not yet confirmed against the live API. Excluded. |
 
 ```bash
-D:\Jenkins>java -jar jenkins.war
+mvn test -Dgroups=smoke
+mvn test -DexcludedGroups=external-api
 ```
 
-If error appears:
+---
 
-```text
-Running with Java 23 from C:\Program Files\Java\jdk-23, which is not fully supported.
-Run the command again with the --enable-future-java flag to bypass this error.
-Supported Java versions are: [17, 21, 25]
-See https://jenkins.io/redirect/java-support/ for more information.
-```
-
-Run:
+## Cucumber
 
 ```bash
-D:\Jenkins>java -jar jenkins.war --enable-future-java
+mvn test -Dcucumber.filter.tags="@AddPlace"
+mvn test -Dcucumber.filter.tags="@Regression and not @DeletePlace"
+mvn verify   # generates target/cucumber-html-report/
 ```
+
+The runner extends `AbstractTestNGCucumberTests`, so scenarios are TestNG tests. This is
+deliberate: Maven Surefire uses **one** test provider per module, so a JUnit 4 Cucumber
+runner alongside TestNG tests means one of the two silently never runs while the build
+still reports success.
+
+Scenarios run in parallel. That is only safe because there is no static state — each
+scenario gets its own `ScenarioContext` from PicoContainer.
 
 ---
 
-### Get Initial Admin Password
+## Reports and logs
 
-```text
-C:\Users\anil\.jenkins\secrets\initialAdminPassword
-```
+| Path | Contents |
+|---|---|
+| `target/surefire-reports/index.html` | TestNG results |
+| `target/cucumber-html-report/` | Cucumber HTML (after `mvn verify`) |
+| `target/json-reports/cucumber-report.json` | JSON for Jenkins |
+| `target/logs/framework.log` | One line per call: verb, path, status, duration |
+| `target/logs/api-traffic.log` | Full request and response bodies |
 
-Example:
-
-```text
-724931c76fe542e98d0456e065eb81c5
-```
-
-Open:
-
-```text
-http://localhost:8080/
-```
-
-Login:
-
-```text
-username: anil
-password: anil****
-```
+Two log files on purpose — the readable trace stays readable, and the verbose payload dumps
+are there when a failure needs them.
 
 ---
 
-### Install Cucumber Reports Plugin
+## What changed from the previous version
 
-- Manage Jenkins
-- Manage Plugins
-- Available
-- Search: cucumber reports
-- Install without restart
+| Before | After | Why |
+|---|---|---|
+| `public static void main` in `src/main/java` | TestNG tests in `src/test/java` | Nothing ran the `main` methods. |
+| `//@Test`, `//Assert.assertEquals` everywhere | Real assertions | TestNG wasn't a dependency, so every assertion was dead code and nothing was validated. |
+| `Utils` cached one shared `RequestSpecification` | `SpecFactory` builds a fresh one per call | Specs are **mutable**. Callers did `.body()`/`.queryParam()` on the shared instance, so params accumulated across scenarios and bodies leaked between calls. |
+| `static String placeId` shared with `Hooks` | `ScenarioContext` via PicoContainer | Static state leaked between scenarios and blocked parallel runs. `Hooks` also did `new StepDefinition()`, an object Cucumber never used. |
+| Secrets in source | `ConfigManager` + env vars | A live Google secret and an ecom password were compiled into class files. |
+| `RestAssured.baseURI = "..."` | Per-service base URI from config | A global breaks the moment two APIs are on different hosts — which they are here. |
+| Selenium + WebDriverManager | Removed | Driving Google's consent screen is slow, blocked, and not your code. `OAuthService.exchangeAuthorizationCode` tests the part that is yours. |
+| `if/else if` over method name | `HttpMethod` enum | Four copies of the same `given().spec().when()` chain. |
+| Three identical `Course` POJOs | One `Course` | Jackson binds by shape, not by the key holding the array. |
+| `data.get(1)`, `data.get(2)` from Excel | Header-keyed `Map` | Inserting a spreadsheet column silently shifted every index. |
+| JUnit 4 + TestNG | TestNG only | Surefire runs one provider; the other would be skipped silently. |
+| `logging.txt` in repo root, committed | `target/logs/` | Build output does not belong in version control. |
+| Fixed isbns in data providers | Generated per run | The API rejects duplicates, so those tests passed once, ever. |
+| GraphQL documented, never coded | 9 working tests | It was the one topic in the README with no implementation. |
 
 ---
 
-## Create Jenkins Job (Maven Project)
+## Three API quirks the models encode
 
-- Jenkins Dashboard → New Item
-- Enter Item Name
-- Select Maven project
-- Click OK
+Found by running the tests, not by reading docs:
+
+1. **Places is asymmetric.** Add Place accepts `{"lat", "lng"}`; Get Place returns
+   `{"latitude", "longitude"}`. Hence separate `Location` (request) and `GeoLocation`
+   (response) — the reason request and response models are not shared.
+2. **`types` changes shape.** Sent as an array `["shoe park","shop"]`, returned as a string
+   `"shoe park,shop"`. `GetPlaceResponse.types` is a `String` with a `typesList()` helper —
+   model what the API sends, not what you wish it sent.
+3. **GraphQL errors are not always HTTP 200.** The common claim that "GraphQL always
+   returns 200" is only true for *field* errors. This endpoint returns **400** for a
+   validation error. The reliable invariant is the `errors` array in the body, never the
+   status code — which is why `GraphQLService.execute()` asserts no status at all.
 
 ---
 
-### Source Code Management
+## Extending it
 
-- Select Git
-- Provide repository URL
+**A new endpoint** — add to `ApiEndpoint`, add a method to the relevant service, write the
+test. Nothing else changes.
 
-OR
+**A new API** — add a base URL to `ConfigKeys` and `qa.properties`, add its endpoints, add a
+service class.
 
-```text
-file:///D:/path/to/repo
+**Real GraphQL queries** — run `GraphQLTest.shouldDiscoverAvailableQueryFields`; it logs
+every root field the server exposes. Add documents to `GraphQLQueries` using those names.
+The current queries use introspection so they pass against any GraphQL server without
+depending on a schema staying live.
+
+---
+
+## Jenkins
+
+Maven project, goals `clean verify`. Post-build → Publish Cucumber reports, JSON path
+`target/json-reports/cucumber-report.json`.
+
+For tag filtering, tick *This project is parameterized*, add a Choice parameter named `tag`
+with values `@AddPlace`, `@DeletePlace`, `@Regression`, and append to the goals:
+
+```
+-Dcucumber.filter.tags="$tag"
 ```
 
-Advanced → Use custom workspace → Provide local repo path
+Inject secrets with the Credentials Binding plugin as `OAUTH_CLIENTID`,
+`OAUTH_CLIENTSECRET`, `ECOM_USEREMAIL`, `ECOM_USERPASSWORD` — never as build parameters,
+which are visible in the build log.
+
+Jenkins supports Java 17, 21 and 25. Start it with
+`java -jar jenkins.war --enable-future-java` if it warns about the JDK.
 
 ---
 
-### Build Configuration
+## Gherkin reference
 
-Under Build:
-
-- Invoke top-level Maven targets
-
-Goals and options:
-
-```text
-clean test
-```
-
----
-
-### Post-Build Actions
-
-- Publish Cucumber reports
-
-JSON path:
-
-```text
-target\cucumber-reports\cucumber.json
-```
-
-Save job.
-
----
-
-### Run Job
-
-- Click Build Now
-- Click build number
-- Click Cucumber reports
-
----
-
-## Configure Tags in Jenkins Maven Job
-
-Append in Goals and options:
-
-```text
--Dcucumber.filter.tags=@"$tag"
-```
-
-Enable:
-
-- This job is parameterized
-
-Add Parameter:
-
-- Choice Parameter
-
-Name:
-
-```text
-tag
-```
-
-Choices:
-
-```text
-@AddPlace
-@DeletePlace
-@UpdatePlace
-```
-
-Save job.
-
----
-
-### Build With Parameters
-
-- Click Build with Parameters
-- Select tag
-- Run build
-
-Selected tag filters scenarios.
-
----
-
-### Welcome to GraphiQL
-- https://rahulshettyacademy.com/gq/graphql
-- ! means it is a mandatory field
-
-
-- GraphiQL is an in-browser tool for writing, validating, and
-- testing GraphQL queries.
-
-- Type queries into this side of the screen, and you will see intelligent
-- typeaheads aware of the current GraphQL type schema and live syntax and
-- validation errors highlighted within the text.
-
-- GraphQL queries typically start with a "{" character. Lines that start
-- with a # are ignored.
-
-- An example GraphQL query might look like:
-
-```text    
-{
-     field(arg: "value") {
-       subField
-     }
-}
-```
-
-- Keyboard shortcuts:
-
--  Prettify Query:  Shift-Ctrl-P (or press the prettify button above)
-
--     Merge Query:  Shift-Ctrl-M (or press the merge button above)
-
--       Run Query:  Ctrl-Enter (or press the play button above)
-
--   Auto Complete:  Ctrl-Space (or just start typing)
-
-## End of README
-
-Introduction to Rest Api's and where it is used in project architecture
-real time usage of api's in industry and examples
-understanding of GET, POST, PUT, DELETE HTTP CRUD operations of api's
-what are path, query parameters and headers in rest api
-Postman tool for testing api's and how to use it
-how to create a collection in postman and organize api's
-setting up maven project for api testing with dependencies
-validate status codes
-Assetions on json response body and headers through automation code
-parsing json response using JsonPath and validating values
-integrating multiple api with each other and validating the flow with common json response data
-building end to end automation using POST, GET, PUT, DELETE api's together
-importance of junit and testng in api automation and how to use them
-understanding structure of complex nested json response and its array notations how to validate it
-retrieving the json array size and its elements using jsonpath and validating it
-iterating over every element of json array and validating it
-retrieving jsnon nodes on condition logic using jsonpath and validating it
-real time example to solve business logic through json response
-
-### Handling dynamic json payloads with parameterization and data driven testing using testng data provider
-- why dynamic json payloads are important to understand
-- sending parameters to payload from test
-- understanding testng data provider for parameterization
-- example of parametarization of api tests with multiple data sets
-- how to handle static json payloads
-
-basic authentication and token based authentication in api's
-how to send files as attachment in post api calls
-handling oAuth2.0 authentication in api's and how to generate access tokens for client credentials and authorization code grant types
-
-serialization and deserialization of json response to pojo classes
-- what is serialization and deserialization in api testing
-- how to create pojo classes for json response
-- using libraries like jackson or gson for serialization and deserialization
-- example of deserializing json response to pojo and validating values
-- example of serializing pojo to json payload and sending it in api request
-- advantages of using pojo classes for api testing and how it improves code readability and maintainability
-- handling nested json response with pojo classes and validating complex data structures
-- best practices for creating pojo classes and maintaining them in api automation projects
-- real time example of using serialization and deserialization in api testing to solve business logic and validate end to end flows
-- common challenges faced during serialization and deserialization and how to overcome them in api automation projects
-
-Request and response specifications in Rest Assured for reusable api test code
-- what are request and response specifications in Rest Assured
-- how to create request specifications for common request configurations like base URI, headers, authentication, etc
-- how to create response specifications for common response validations like status code, content type, etc
-- example of using request and response specifications in api tests to reduce code duplication and improve maintainability
-- best practices for organizing request and response specifications in api automation projects
-
-cucumber and jenkins integration for api test automation
-
-GraphQL api testing and how it differs from REST api testing
-- what is GraphQL and how it differs from REST
-- how to send GraphQL queries and mutations in api tests
-- validating GraphQL responses and handling errors in GraphQL api testing
-- example of testing a GraphQL api with Rest Assured and validating the response data
-- best practices for testing GraphQL apis and how to handle complex queries and mutations in api automation projects
-- query variables
-
-git basics
-
-using excel for testData and reading the values into tests using HashMap and converting to json
-
-core java basics
-
-
-
-
-
+`Feature` list of scenarios · `Scenario` one business rule · `Given` precondition ·
+`When` action · `Then` expected outcome · `And`/`But` continuation ·
+`Scenario Outline` + `Examples` one run per data row · `Background` steps before every
+scenario · `"""` doc string · `|` data table · `@tag` filtering · `<placeholder>` outline
+substitution · `#` comment.

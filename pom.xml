@@ -7,12 +7,36 @@
     <groupId>org.api.automation</groupId>
     <artifactId>API-Automation</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <name>API-Automation</name>
+    <description>REST Assured + TestNG + Cucumber API automation framework</description>
 
     <properties>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
-        <maven.compiler.release>23</maven.compiler.release>
+        <!--
+          Targets Java 21 (LTS) rather than the installed JDK's own version. The old value
+          was 23, which is not an LTS release and is no longer installed on this machine.
+          Jenkins supports 17, 21 and 25 — 21 compiles and runs on all of them.
+        -->
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Which environment config to load: src/test/resources/config/<env>.properties -->
+        <env>qa</env>
+        <!-- Which TestNG suite to run. Override: mvn test -DsuiteXmlFile=src/test/resources/suites/regression.xml -->
+        <suiteXmlFile>src/test/resources/suites/testng.xml</suiteXmlFile>
+        <!-- Cucumber tag filter, honoured by the Cucumber runner. Empty = all scenarios. -->
+        <cucumber.filter.tags/>
+
+        <cucumber.version>7.34.0</cucumber.version>
+        <restassured.version>5.5.6</restassured.version>
+        <testng.version>7.10.2</testng.version>
+        <jackson.version>2.18.2</jackson.version>
+        <poi.version>5.4.0</poi.version>
+        <hamcrest.version>3.0</hamcrest.version>
+        <log4j.version>2.24.3</log4j.version>
+
+        <surefire.version>3.5.2</surefire.version>
+        <compiler.version>3.13.0</compiler.version>
+        <cucumber.reporting.version>5.10.2</cucumber.reporting.version>
     </properties>
 
     <dependencyManagement>
@@ -20,7 +44,7 @@
             <dependency>
                 <groupId>io.cucumber</groupId>
                 <artifactId>cucumber-bom</artifactId>
-                <version>7.34.0</version>
+                <version>${cucumber.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -29,103 +53,113 @@
 
     <dependencies>
 
-        <!-- Rest Assured -->
+        <!-- ============ HTTP / API layer ============ -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
-            <version>5.5.6</version>
+            <version>${restassured.version}</version>
         </dependency>
 
-        <!-- Cucumber -->
+        <!-- Response body assertions: response.then().body("scope", equalTo("APP")) -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>${hamcrest.version}</version>
+        </dependency>
+
+        <!-- ============ Serialization / Deserialization ============ -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- ============ Test runner ============ -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+        </dependency>
+
+        <!-- ============ BDD layer (runs on TestNG, not JUnit) ============ -->
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-junit</artifactId>
-            <scope>test</scope>
+            <artifactId>cucumber-testng</artifactId>
         </dependency>
-
-        <!-- JUnit -->
+        <!-- Dependency injection for step definitions: lets ScenarioContext be shared
+             per-scenario instead of using static fields. -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-picocontainer</artifactId>
         </dependency>
 
-        <!-- Hamcrest -->
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest</artifactId>
-            <version>3.0</version>
-        </dependency>
-
-        <!-- Jackson -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.17.0</version>
-        </dependency>
-
-        <!-- Selenium -->
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>4.36.0</version>
-        </dependency>
-
-        <!-- WebDriverManager -->
-        <dependency>
-            <groupId>io.github.bonigarcia</groupId>
-            <artifactId>webdrivermanager</artifactId>
-            <version>6.3.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi</artifactId>
-            <version>5.2.5</version>
-        </dependency>
-
+        <!-- ============ Test data ============ -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.2.5</version>
+            <version>${poi.version}</version>
+        </dependency>
+
+        <!-- ============ Logging ============ -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
         </dependency>
 
     </dependencies>
 
-
     <build>
         <plugins>
-            <!-- Compiler plugin using Java release property -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.12.1</version>
+                <version>${compiler.version}</version>
                 <configuration>
                     <release>${maven.compiler.release}</release>
-<!--                    <testFailureIgnore>true</testFailureIgnore>-->
                 </configuration>
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>${suiteXmlFile}</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <!-- Forwards Maven properties into the JVM so ConfigManager can read them -->
+                    <systemPropertyVariables>
+                        <env>${env}</env>
+                        <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <!-- Rich HTML report from the Cucumber JSON output; consumed by Jenkins too -->
+            <plugin>
                 <groupId>net.masterthought</groupId>
                 <artifactId>maven-cucumber-reporting</artifactId>
-                <version>5.10.2</version>
+                <version>${cucumber.reporting.version}</version>
                 <executions>
                     <execution>
-                        <id>execution</id>
+                        <id>cucumber-html-report</id>
                         <phase>verify</phase>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
                             <projectName>API-Automation</projectName>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <outputDirectory>${project.build.directory}/cucumber-html-report</outputDirectory>
                             <inputDirectory>${project.build.directory}/json-reports</inputDirectory>
                             <jsonFiles>
                                 <param>**/*.json</param>

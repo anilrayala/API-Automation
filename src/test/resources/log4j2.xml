@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Framework logging.
+
+  Two destinations, on purpose:
+    - Console  : a readable one-line-per-call trace of what the suite is doing.
+    - File     : the same content kept in target/logs/framework.log for CI, where
+                 console output is often truncated.
+
+  Full HTTP request and response bodies do NOT come through here. They are written
+  by the REST Assured logging filters in SpecFactory to target/logs/api-traffic.log,
+  which keeps the readable trace separate from the verbose payload dumps.
+-->
+<Configuration status="WARN">
+
+    <Properties>
+        <Property name="pattern">%d{HH:mm:ss.SSS} %-5level [%t] %logger{1} - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${pattern}"/>
+        </Console>
+
+        <File name="FrameworkLog" fileName="target/logs/framework.log" append="false">
+            <PatternLayout pattern="${pattern}"/>
+        </File>
+    </Appenders>
+
+    <Loggers>
+        <!-- Our own code -->
+        <Logger name="org.api.automation" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FrameworkLog"/>
+        </Logger>
+
+        <!-- Third-party libraries are noisy at INFO; only surface real problems -->
+        <Root level="WARN">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FrameworkLog"/>
+        </Root>
+    </Loggers>
+</Configuration>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<!--
+  Default suite. Run with:  mvn clean test
+
+  Excludes two groups, for reasons rather than convenience:
+
+    requires-credentials  - needs a live OAuth client secret or e-commerce login, which are
+                            NOT in the repository. Set the environment variables described in
+                            config/qa.properties, then run suites/auth.xml.
+
+    needs-verification    - asserts behaviour nobody has confirmed against the live API yet.
+                            A test in the default suite should be one whose expected result
+                            is known; anything else produces failures that teach you nothing.
+
+  Everything else runs, including the tests that hit the practice APIs.
+-->
+<suite name="API-Automation-Default" verbose="1" parallel="classes" thread-count="4"
+       data-provider-thread-count="3">
+
+    <listeners>
+        <!-- Logs start/pass/fail/skip per test and a summary per suite -->
+        <listener class-name="org.api.automation.listeners.TestListener"/>
+    </listeners>
+
+    <!--
+      parallel="classes" runs each test class on its own thread. This is safe because there
+      is no shared mutable state: services build a fresh request spec per call, and
+      chained state (a place id) lives in an instance field, so a class's own methods still
+      run in order on one thread.
+
+      parallel="methods" would be faster still but would break PlaceCrudE2ETest, whose
+      steps must run in sequence. Classes is the right granularity here.
+    -->
+
+    <test name="API Tests">
+        <groups>
+            <run>
+                <exclude name="requires-credentials"/>
+                <exclude name="needs-verification"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="org.api.automation.tests.*"/>
+        </packages>
+    </test>
+
+    <test name="BDD Scenarios">
+        <classes>
+            <class name="org.api.automation.bdd.runner.CucumberTestRunner"/>
+        </classes>
+    </test>
+
+</suite>

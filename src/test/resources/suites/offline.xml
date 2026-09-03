@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<!--
+  Tests that need no network at all: JsonPath parsing, serialization/deserialization
+  mapping, spreadsheet reading, and URL parsing.
+
+    mvn clean test -DsuiteXmlFile=src/test/resources/suites/offline.xml
+
+  Run this first when something is broken. If it passes, the framework and the models are
+  fine and the problem is the environment or the API. If it fails, the problem is in here.
+  It also runs in a couple of seconds, which makes it the right suite for a pre-commit hook.
+-->
+<suite name="API-Automation-Offline" verbose="1" parallel="classes" thread-count="4">
+
+    <listeners>
+        <listener class-name="org.api.automation.listeners.TestListener"/>
+    </listeners>
+
+    <test name="Offline Tests">
+        <groups>
+            <run>
+                <include name="offline"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="org.api.automation.tests.*"/>
+        </packages>
+    </test>
+
+</suite>

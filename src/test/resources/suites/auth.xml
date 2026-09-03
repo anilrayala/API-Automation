@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<!--
+  Authentication and authorization: OAuth 2.0 token acquisition and the e-commerce
+  token flow.
+
+  These tests need real credentials, which are deliberately not in the repository.
+  Provide them first:
+
+    $env:OAUTH_CLIENTID     = "...apps.googleusercontent.com"
+    $env:OAUTH_CLIENTSECRET = "..."
+    $env:ECOM_USEREMAIL     = "you@example.com"
+    $env:ECOM_USERPASSWORD  = "..."
+
+  Then:
+
+    mvn clean test -DsuiteXmlFile=src/test/resources/suites/auth.xml
+
+  Kept out of the default suite so a fresh clone runs green without needing secrets. If a
+  credential is missing, the test fails immediately naming the config key it wanted, rather
+  than sending an empty value and reporting a confusing 401.
+
+  Not parallel: OAuth providers rate-limit token endpoints, and the token cache means the
+  first test fetches a token the rest reuse.
+-->
+<suite name="API-Automation-Auth" verbose="1">
+
+    <listeners>
+        <listener class-name="org.api.automation.listeners.TestListener"/>
+    </listeners>
+
+    <test name="Auth Tests">
+        <groups>
+            <run>
+                <include name="auth"/>
+                <include name="e2e"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="org.api.automation.tests.auth.OAuthTest"/>
+            <class name="org.api.automation.tests.ecom.EcomOrderE2ETest"/>
+        </classes>
+    </test>
+
+</suite>
